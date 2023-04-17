@@ -1,0 +1,96 @@
+
+--------------------------------------------------------------------------
+
+check_pakcages.py
+
+import pkg_resources
+
+required = ['google-auth', 'google-api-python-client']
+
+installed = [pkg.key for pkg in pkg_resources.working_set]
+
+missing = [pkg for pkg in required if pkg not in installed]
+
+if missing:
+    print(f"Missing packages: {missing}")
+else:
+    print("google-auth and google-api-python-client are installed.")
+
+-------------------------------------------------------------------------
+
+credentials.json
+
+{'client_id': 'insert_client_id_here', 'client_secret': 'insert_client_secret_here', 'access_token': 'insert_access_token_here'}
+
+-------------------------------------------------------------------------
+
+delete_emails.py
+
+import google.oauth2.credentials
+import googleapiclient.discovery
+import json
+
+
+
+def delete_emails_by_query(credentials, query):
+    gmail_service = googleapiclient.discovery.build('gmail', 'v1', credentials=credentials)
+    query_results = gmail_service.users().messages().list(q=query, userId='me').execute()
+    if 'messages' in query_results:
+        messages = query_results['messages']
+        message_count = len(messages)
+        print('Number of Messages To Delete:', message_count)
+        if message_count > 0:
+            for message in messages:
+                gmail_service.users().messages().delete(userId='me', id=message['id']).execute()
+        return message_count
+    else:
+        print('No Messages Found!')
+        return 0
+
+-----------------------------------------------------------------------
+
+filter_emails.py
+
+def filter_emails_by_query(service, user_id, query):
+    try:
+        response = service.users().messages().list(userId=user_id, q=query).execute()
+        messages = response.get('messages', [])
+
+        if not messages:
+            return []
+
+        subjects = []
+        for message in messages:
+            try:
+                message_details = service.users().messages().get(userId=user_id, id=message['id']).execute()
+                headers = message_details['payload']['headers']
+                subject = [x['value'] for x in headers if x['name'] == 'Subject']
+
+                if subject:
+                    subjects.append(subject[0])
+
+            except googleapiclient.errors.HttpError as error:
+                print(f'An error occurred: {error}')
+                continue
+
+        return subjects
+
+    except googleapiclient.errors.HttpError as error:
+        raise Exception(f'An error occurred: {error}')
+
+----------------------------------------------------------------------
+
+authenticate_with_gmail_api.py
+
+<Insert modified code from Quickstart guide here>
+<Insert code to filter emails based on user requirements here>
+
+----------------------------------------------------------------------
+
+retrieve_and_filter_emails.py
+
+# TODO: Write code to retrieve and filter emails using Gmail API client library
+
+
+
+
